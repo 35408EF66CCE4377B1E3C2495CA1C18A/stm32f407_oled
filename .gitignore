@@ -1,0 +1,8 @@
+oled Configuration
+*.o
+*.pbi
+*.browse
+*.cout
+*.map
+*.out
+*.sim
