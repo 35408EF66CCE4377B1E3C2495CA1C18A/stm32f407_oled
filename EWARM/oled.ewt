@@ -1061,6 +1061,12 @@
     <group>
       <name>User</name>
       <file>
+        <name>$PROJ_DIR$\..\Src\admin_interface.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\configuration_manager.c</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\Src\crc.c</name>
       </file>
       <file>
@@ -1080,6 +1086,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Src\oled.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\printf2uart.c</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Src\spi.c</name>
@@ -1166,7 +1175,7 @@
         <name>$PROJ_DIR$\..\Middlewares\Third_Party\FreeRTOS\Source\event_groups.c</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_1.c</name>
+        <name>$PROJ_DIR$\..\Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_2.c</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Middlewares\Third_Party\FreeRTOS\Source\list.c</name>

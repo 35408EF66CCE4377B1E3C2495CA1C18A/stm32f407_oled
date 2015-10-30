@@ -40,7 +40,7 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "configuration_manager.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -86,6 +86,16 @@ int main(void)
   MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */
+
+  printf("Startup...\r\n");
+  // Save test configs to the internal flash.......
+	SystemConfig.DutyRoomNumber = 18600322781;
+	SystemConfig.WatchKeeper1 = 13550275765;
+	SystemConfig.WatchKeeper2 = 18080427070;
+
+	//SaveConfiguration();
+
+	ReadConfiguration();
 
 
   /* USER CODE END 2 */
