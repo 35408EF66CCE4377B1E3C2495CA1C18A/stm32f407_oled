@@ -1079,9 +1079,6 @@
         <name>$PROJ_DIR$\..\Src\gpio.c</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\Src\icons.h</name>
-      </file>
-      <file>
         <name>$PROJ_DIR$\..\Src\main.c</name>
       </file>
       <file>
@@ -1089,6 +1086,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Src\printf2uart.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\sim900a.c</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Src\spi.c</name>
@@ -1101,6 +1101,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Src\usart.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Src\usart_common.c</name>
       </file>
     </group>
   </group>

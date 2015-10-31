@@ -41,6 +41,7 @@
 
 /* USER CODE BEGIN Includes */
 #include "configuration_manager.h"
+#include "sim900a.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -84,6 +85,7 @@ int main(void)
   MX_CRC_Init();
   MX_SPI3_Init();
   MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
 
   /* USER CODE BEGIN 2 */
 

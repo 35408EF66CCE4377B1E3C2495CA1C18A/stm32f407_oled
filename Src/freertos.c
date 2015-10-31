@@ -50,6 +50,7 @@
 osThreadId defaultTaskHandle;
 osThreadId uart1TaskHandle;
 osMessageQId qUart1Handle;
+osMessageQId qUart2Handle;
 osSemaphoreId sem_startfftHandle;
 osSemaphoreId semWaitW550SpiDmaHandle;
 
@@ -115,6 +116,10 @@ void MX_FREERTOS_Init(void) {
   osMessageQDef(qUart1, 5, uint32_t);
   qUart1Handle = osMessageCreate(osMessageQ(qUart1), NULL);
 
+  /* definition and creation of qUart2 */
+  osMessageQDef(qUart2, 5, uint32_t);
+  qUart2Handle = osMessageCreate(osMessageQ(qUart2), NULL);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -167,17 +172,18 @@ void StartTaskUart1(void const * argument)
   for(;;)
   {
 	// Wait for a message from the Uart1 ISR
-
+	//printf("  Wait for next command....\r\n");
 	WaitForCommand(&pCommand);
-
+	//printf("  Parse command...\r\n");
 	//printf("Command: %s\r\n", (uint8_t*)pCommand);
 
 	retval_parsecmd = ParseCommand(pCommand, &ParsedCommand);
+	//printf("  Command parsed!\r\n");
 
 	if(retval_parsecmd == aifOK)
 	{
 
-		printf("Command Name:%s\r\nCommand Para:%s\r\n", ParsedCommand.command, ParsedCommand.para);
+		//printf("Command Name:%s\r\nCommand Para:%s\r\n", ParsedCommand.command, ParsedCommand.para);
 
 		if(strcmp((char*)ParsedCommand.command, "CELL0") == 0)
 		{
@@ -217,20 +223,20 @@ void StartTaskUart1(void const * argument)
 		}
 
 		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
-		osDelay(50);
+		osDelay(10);
 		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
 	}
 	else
 	{
 
-		printf("Command parsing error: %d\r\n", retval_parsecmd);
+		//printf("Command parsing error: %d\r\n", retval_parsecmd);
 
 		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
-		osDelay(50);
+		osDelay(10);
 		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
-		osDelay(100);
-		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
 		osDelay(50);
+		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
+		osDelay(10);
 		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
 	}
   }

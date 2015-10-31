@@ -3,9 +3,6 @@
 
 #include <stdint.h>
 
-#define MAX_COUNT_UART1_QUEUE	5
-#define MAX_DEPTH_UART1_QUEUE	50
-
 #define MAX_LEN_CMD_NAME	15
 #define MAX_LEN_CMD_PARA	35
 
