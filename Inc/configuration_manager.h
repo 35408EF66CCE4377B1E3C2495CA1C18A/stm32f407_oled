@@ -9,6 +9,12 @@ typedef struct
 	uint64_t DutyRoomNumber;
 	uint64_t WatchKeeper1;
 	uint64_t WatchKeeper2;
+	uint8_t	Mac[6];
+	uint8_t	IP[4];
+	uint8_t SubMask[4];
+	uint8_t Gateway[4];
+	uint8_t Dns[4];
+
 } ConfigurationTypeDef;
 
 /*

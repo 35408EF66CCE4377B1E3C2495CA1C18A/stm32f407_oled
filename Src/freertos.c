@@ -44,23 +44,37 @@
 #include "gpio.h"
 #include "admin_interface.h"
 #include "configuration_manager.h"
+#include "ethernet_common.h"
+
+#include "socket.h"
+#include "wizchip_conf.h"
+#include "loopback.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
 osThreadId defaultTaskHandle;
 osThreadId uart1TaskHandle;
+osThreadId ethInitTaskHandle;
+osThreadId ethTransTaskHandle;
 osMessageQId qUart1Handle;
 osMessageQId qUart2Handle;
-osSemaphoreId sem_startfftHandle;
-osSemaphoreId semWaitW550SpiDmaHandle;
+osSemaphoreId semW5500Int0Handle;
+osSemaphoreId semW5500TxCpltHandle;
+osSemaphoreId semW5500RxCpltHandle;
 
 /* USER CODE BEGIN Variables */
-
+////////////////////////////////////////////////
+// Shared Buffer Definition for LOOPBACK TEST //
+////////////////////////////////////////////////
+#define DATA_BUF_SIZE   2048
+uint8_t gDATABUF[DATA_BUF_SIZE];
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
 void StartDefaultTask(void const * argument);
 void StartTaskUart1(void const * argument);
+void StartEthInitTask(void const * argument);
+void StartEthTransTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -82,15 +96,23 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
-  /* definition and creation of sem_startfft */
-  osSemaphoreDef(sem_startfft);
-  sem_startfftHandle = osSemaphoreCreate(osSemaphore(sem_startfft), 1);
+  /* definition and creation of semW5500Int0 */
+  osSemaphoreDef(semW5500Int0);
+  semW5500Int0Handle = osSemaphoreCreate(osSemaphore(semW5500Int0), 1);
 
-  /* definition and creation of semWaitW550SpiDma */
-  osSemaphoreDef(semWaitW550SpiDma);
-  semWaitW550SpiDmaHandle = osSemaphoreCreate(osSemaphore(semWaitW550SpiDma), 1);
+  /* definition and creation of semW5500TxCplt */
+  osSemaphoreDef(semW5500TxCplt);
+  semW5500TxCpltHandle = osSemaphoreCreate(osSemaphore(semW5500TxCplt), 1);
+
+  /* definition and creation of semW5500RxCplt */
+  osSemaphoreDef(semW5500RxCplt);
+  semW5500RxCpltHandle = osSemaphoreCreate(osSemaphore(semW5500RxCplt), 1);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
+  // Clear the semaphores
+  osSemaphoreWait(semW5500Int0Handle, osWaitForever);
+  osSemaphoreWait(semW5500TxCpltHandle, osWaitForever);
+  osSemaphoreWait(semW5500RxCpltHandle, osWaitForever);
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
@@ -106,6 +128,14 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of uart1Task */
   osThreadDef(uart1Task, StartTaskUart1, osPriorityIdle, 0, 256);
   uart1TaskHandle = osThreadCreate(osThread(uart1Task), NULL);
+
+  /* definition and creation of ethInitTask */
+  osThreadDef(ethInitTask, StartEthInitTask, osPriorityIdle, 0, 128);
+  ethInitTaskHandle = osThreadCreate(osThread(ethInitTask), NULL);
+
+  /* definition and creation of ethTransTask */
+  osThreadDef(ethTransTask, StartEthTransTask, osPriorityIdle, 0, 64);
+  ethTransTaskHandle = osThreadCreate(osThread(ethTransTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -241,6 +271,32 @@ void StartTaskUart1(void const * argument)
 	}
   }
   /* USER CODE END StartTaskUart1 */
+}
+
+/* StartEthInitTask function */
+void StartEthInitTask(void const * argument)
+{
+  /* USER CODE BEGIN StartEthInitTask */
+	HardwareResetAllChips();
+	InitEternetInterface(W5500_0);
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartEthInitTask */
+}
+
+/* StartEthTransTask function */
+void StartEthTransTask(void const * argument)
+{
+  /* USER CODE BEGIN StartEthTransTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartEthTransTask */
 }
 
 /* USER CODE BEGIN Application */

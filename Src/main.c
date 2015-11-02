@@ -83,17 +83,29 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_CRC_Init();
+  MX_SPI1_Init();
   MX_SPI3_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
 
   /* USER CODE BEGIN 2 */
 
-  printf("Startup...\r\n");
+  printf("Startup, loading parameters...\r\n");
   // Save test configs to the internal flash.......
 	SystemConfig.DutyRoomNumber = 18600322781;
 	SystemConfig.WatchKeeper1 = 13550275765;
 	SystemConfig.WatchKeeper2 = 18080427070;
+//	SystemConfig.Mac[0] = 0x0;
+//	SystemConfig.Mac[1] = 0x08;
+//	SystemConfig.Mac[2] = 0xdc;
+//	SystemConfig.Mac[3] = 0x00;
+//	SystemConfig.Mac[4] = 0x00;
+//	SystemConfig.Mac[5] = 0x01;
+//	SystemConfig.IP = {192, 168, 2, 110};
+//	SystemConfig.SubMask = {255, 255, 255, 0};
+//	SystemConfig.Dns = {0, 0, 0, 0};
+//	SystemConfig.Gateway = {192, 168, 2, 1};
+
 
 	//SaveConfiguration();
 
@@ -107,7 +119,7 @@ int main(void)
 
   /* Start scheduler */
   osKernelStart();
-  
+
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
@@ -187,10 +199,10 @@ void assert_failed(uint8_t* file, uint32_t line)
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-*/ 
+*/
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

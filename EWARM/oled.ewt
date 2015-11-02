@@ -1073,6 +1073,9 @@
         <name>$PROJ_DIR$\..\Src\dma.c</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\Src\ethernet_common.c</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\Src\freertos.c</name>
       </file>
       <file>
@@ -1161,6 +1164,24 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_uart.c</name>
+      </file>
+    </group>
+  </group>
+  <group>
+    <name>Hardwares</name>
+    <group>
+      <name>w5500</name>
+      <file>
+        <name>$PROJ_DIR$\..\Hardwares\W5500\Application\loopback\loopback.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Hardwares\W5500\Ethernet\socket.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Hardwares\W5500\Ethernet\W5500\w5500.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Hardwares\W5500\Ethernet\wizchip_conf.c</name>
       </file>
     </group>
   </group>
