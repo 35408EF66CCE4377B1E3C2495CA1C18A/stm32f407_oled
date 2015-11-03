@@ -1070,6 +1070,9 @@
         <name>$PROJ_DIR$\..\Src\crc.c</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\Src\debug.c</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\Src\dma.c</name>
       </file>
       <file>

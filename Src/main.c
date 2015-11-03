@@ -42,6 +42,7 @@
 /* USER CODE BEGIN Includes */
 #include "configuration_manager.h"
 #include "sim900a.h"
+#include "debug.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -90,7 +91,7 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 
-  printf("Startup, loading parameters...\r\n");
+  printk("Startup, loading parameters...\r\n");
   // Save test configs to the internal flash.......
 	SystemConfig.DutyRoomNumber = 18600322781;
 	SystemConfig.WatchKeeper1 = 13550275765;

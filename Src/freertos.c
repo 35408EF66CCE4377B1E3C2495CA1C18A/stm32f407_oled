@@ -43,9 +43,8 @@
 #include "icons.h"
 #include "gpio.h"
 #include "admin_interface.h"
-#include "configuration_manager.h"
 #include "ethernet_common.h"
-
+#include "debug.h"
 #include "socket.h"
 #include "wizchip_conf.h"
 #include "loopback.h"
@@ -55,12 +54,21 @@
 osThreadId defaultTaskHandle;
 osThreadId uart1TaskHandle;
 osThreadId ethInitTaskHandle;
-osThreadId ethTransTaskHandle;
+osThreadId eth0TransTaskHandle;
+osThreadId eth1TransTaskHandle;
+osThreadId eth2TransTaskHandle;
+osThreadId eth3TransTaskHandle;
+osThreadId eth4TransTaskHandle;
 osMessageQId qUart1Handle;
 osMessageQId qUart2Handle;
-osSemaphoreId semW5500Int0Handle;
 osSemaphoreId semW5500TxCpltHandle;
 osSemaphoreId semW5500RxCpltHandle;
+osSemaphoreId semEthSpiIdleHandle;
+osSemaphoreId semEth0IntHandle;
+osSemaphoreId semEth1IntHandle;
+osSemaphoreId semEth2IntHandle;
+osSemaphoreId semEth3IntHandle;
+osSemaphoreId semEth4IntHandle;
 
 /* USER CODE BEGIN Variables */
 ////////////////////////////////////////////////
@@ -74,7 +82,11 @@ uint8_t gDATABUF[DATA_BUF_SIZE];
 void StartDefaultTask(void const * argument);
 void StartTaskUart1(void const * argument);
 void StartEthInitTask(void const * argument);
-void StartEthTransTask(void const * argument);
+void StartEth0TransTask(void const * argument);
+void StartEth1TransTask(void const * argument);
+void StartEth2TransTask(void const * argument);
+void StartEth3TransTask(void const * argument);
+void StartEth4TransTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -96,10 +108,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
-  /* definition and creation of semW5500Int0 */
-  osSemaphoreDef(semW5500Int0);
-  semW5500Int0Handle = osSemaphoreCreate(osSemaphore(semW5500Int0), 1);
-
   /* definition and creation of semW5500TxCplt */
   osSemaphoreDef(semW5500TxCplt);
   semW5500TxCpltHandle = osSemaphoreCreate(osSemaphore(semW5500TxCplt), 1);
@@ -108,11 +116,36 @@ void MX_FREERTOS_Init(void) {
   osSemaphoreDef(semW5500RxCplt);
   semW5500RxCpltHandle = osSemaphoreCreate(osSemaphore(semW5500RxCplt), 1);
 
+  /* definition and creation of semEthSpiIdle */
+  osSemaphoreDef(semEthSpiIdle);
+  semEthSpiIdleHandle = osSemaphoreCreate(osSemaphore(semEthSpiIdle), 1);
+
+  /* definition and creation of semEth0Int */
+  osSemaphoreDef(semEth0Int);
+  semEth0IntHandle = osSemaphoreCreate(osSemaphore(semEth0Int), 1);
+
+  /* definition and creation of semEth1Int */
+  osSemaphoreDef(semEth1Int);
+  semEth1IntHandle = osSemaphoreCreate(osSemaphore(semEth1Int), 1);
+
+  /* definition and creation of semEth2Int */
+  osSemaphoreDef(semEth2Int);
+  semEth2IntHandle = osSemaphoreCreate(osSemaphore(semEth2Int), 1);
+
+  /* definition and creation of semEth3Int */
+  osSemaphoreDef(semEth3Int);
+  semEth3IntHandle = osSemaphoreCreate(osSemaphore(semEth3Int), 1);
+
+  /* definition and creation of semEth4Int */
+  osSemaphoreDef(semEth4Int);
+  semEth4IntHandle = osSemaphoreCreate(osSemaphore(semEth4Int), 1);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   // Clear the semaphores
-  osSemaphoreWait(semW5500Int0Handle, osWaitForever);
+  osSemaphoreWait(semEth0IntHandle, osWaitForever);
   osSemaphoreWait(semW5500TxCpltHandle, osWaitForever);
   osSemaphoreWait(semW5500RxCpltHandle, osWaitForever);
+	osSemaphoreWait(semEthSpiIdleHandle, osWaitForever);
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
@@ -126,16 +159,32 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of uart1Task */
-  osThreadDef(uart1Task, StartTaskUart1, osPriorityIdle, 0, 256);
+  osThreadDef(uart1Task, StartTaskUart1, osPriorityNormal, 0, 256);
   uart1TaskHandle = osThreadCreate(osThread(uart1Task), NULL);
 
   /* definition and creation of ethInitTask */
-  osThreadDef(ethInitTask, StartEthInitTask, osPriorityIdle, 0, 128);
+  osThreadDef(ethInitTask, StartEthInitTask, osPriorityRealtime, 0, 128);
   ethInitTaskHandle = osThreadCreate(osThread(ethInitTask), NULL);
 
-  /* definition and creation of ethTransTask */
-  osThreadDef(ethTransTask, StartEthTransTask, osPriorityIdle, 0, 64);
-  ethTransTaskHandle = osThreadCreate(osThread(ethTransTask), NULL);
+  /* definition and creation of eth0TransTask */
+  osThreadDef(eth0TransTask, StartEth0TransTask, osPriorityNormal, 0, 64);
+  eth0TransTaskHandle = osThreadCreate(osThread(eth0TransTask), NULL);
+
+  /* definition and creation of eth1TransTask */
+  osThreadDef(eth1TransTask, StartEth1TransTask, osPriorityNormal, 0, 64);
+  eth1TransTaskHandle = osThreadCreate(osThread(eth1TransTask), NULL);
+
+  /* definition and creation of eth2TransTask */
+  osThreadDef(eth2TransTask, StartEth2TransTask, osPriorityNormal, 0, 64);
+  eth2TransTaskHandle = osThreadCreate(osThread(eth2TransTask), NULL);
+
+  /* definition and creation of eth3TransTask */
+  osThreadDef(eth3TransTask, StartEth3TransTask, osPriorityNormal, 0, 64);
+  eth3TransTaskHandle = osThreadCreate(osThread(eth3TransTask), NULL);
+
+  /* definition and creation of eth4TransTask */
+  osThreadDef(eth4TransTask, StartEth4TransTask, osPriorityNormal, 0, 64);
+  eth4TransTaskHandle = osThreadCreate(osThread(eth4TransTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -163,14 +212,14 @@ void StartDefaultTask(void const * argument)
 
 
 
-  	OLED_Init();
+  OLED_Init();
 //  OLED_ShowString(0,0,"123",24);
 //	OLED_ShowString(0,24, "0.96' OLED TEST",16);
 // 	OLED_ShowString(0,40,"ATOM 2014/5/4",12);
 // 	OLED_ShowString(0,52,"ASCII:",12);
 // 	OLED_ShowString(64,52,"CODE:",12);
-	OLED_ShowIcon(0, 0, signal_none);
-	OLED_Refresh_Gram();//更新显示到OLED
+  OLED_ShowIcon(0, 0, signal_none);
+  OLED_Refresh_Gram();//更新显示到OLED
 
 
 
@@ -179,9 +228,9 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
     osDelay(1000);
-	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_10, GPIO_PIN_RESET);
-	osDelay(5);
-	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_10, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOF, GPIO_PIN_10, GPIO_PIN_RESET);
+    osDelay(5);
+    HAL_GPIO_WritePin(GPIOF, GPIO_PIN_10, GPIO_PIN_SET);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -190,9 +239,8 @@ void StartDefaultTask(void const * argument)
 void StartTaskUart1(void const * argument)
 {
   /* USER CODE BEGIN StartTaskUart1 */
-	static uint8_t *pCommand;
-	static CommandTypeDef ParsedCommand;
-	uint64_t tmp;
+	static uint8_t *pcommand;
+	static CommandTypeDef parsedcommand;
 	aifStatus retval_parsecmd;
 
 	// Initial the Admin Interface
@@ -201,74 +249,35 @@ void StartTaskUart1(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	// Wait for a message from the Uart1 ISR
-	//printf("  Wait for next command....\r\n");
-	WaitForCommand(&pCommand);
-	//printf("  Parse command...\r\n");
-	//printf("Command: %s\r\n", (uint8_t*)pCommand);
+		// Wait for a message from the Uart1 ISR
+		//printk("  Wait for next command....\r\n");
+		WaitForCommand(&pcommand);
+		//printk("  Parse command...\r\n");
+		//printk("Command: %s\r\n", (uint8_t*)pCommand);
 
-	retval_parsecmd = ParseCommand(pCommand, &ParsedCommand);
-	//printf("  Command parsed!\r\n");
+		retval_parsecmd = ParseCommand(pcommand, &parsedcommand);
+		//printk("  Command parsed!\r\n");
 
-	if(retval_parsecmd == aifOK)
-	{
-
-		//printf("Command Name:%s\r\nCommand Para:%s\r\n", ParsedCommand.command, ParsedCommand.para);
-
-		if(strcmp((char*)ParsedCommand.command, "CELL0") == 0)
+		if(retval_parsecmd == aifOK)
 		{
-			if(*ParsedCommand.para == '?')
-			{
-				printf("Duty Room Phone:%lld\r\n", SystemConfig.DutyRoomNumber);
-			}
-			else
-			{
-				tmp = atoll((char*)ParsedCommand.para);
-				SystemConfig.DutyRoomNumber = tmp;
-			}
+			ExcuteCommand(&parsedcommand);
+			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
+			osDelay(10);
+			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
 		}
-		else if(strcmp((char*)ParsedCommand.command, "CELL1") == 0)
+		else
 		{
-			if(*ParsedCommand.para == '?')
-			{
-				printf("Watch-Keeper_1 Phone:%lld\r\n", SystemConfig.WatchKeeper1);
-			}
-			else
-			{
-				tmp = atoll((char*)ParsedCommand.para);
-				SystemConfig.WatchKeeper1 = tmp;
-			}
+
+			//printk("Command parsing error: %d\r\n", retval_parsecmd);
+
+			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
+			osDelay(10);
+			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
+			osDelay(50);
+			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
+			osDelay(10);
+			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
 		}
-		else if(strcmp((char*)ParsedCommand.command, "CELL2") == 0)
-		{
-			if(*ParsedCommand.para == '?')
-			{
-				printf("Watch-Keeper_2 Phone:%lld\r\n", SystemConfig.WatchKeeper2);
-			}
-			else
-			{
-				tmp = atoll((char*)ParsedCommand.para);
-				SystemConfig.WatchKeeper2 = tmp;
-			}
-		}
-
-		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
-		osDelay(10);
-		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
-	}
-	else
-	{
-
-		//printf("Command parsing error: %d\r\n", retval_parsecmd);
-
-		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
-		osDelay(10);
-		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
-		osDelay(50);
-		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
-		osDelay(10);
-		HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
-	}
   }
   /* USER CODE END StartTaskUart1 */
 }
@@ -277,8 +286,17 @@ void StartTaskUart1(void const * argument)
 void StartEthInitTask(void const * argument)
 {
   /* USER CODE BEGIN StartEthInitTask */
+
+  // hardware reset all w5500 modules
 	HardwareResetAllChips();
-	InitEternetInterface(W5500_0);
+
+  // Inititalize the network of ethernet modules
+  InitEternetInterface(W5500_0);
+  InitEternetInterface(W5500_1);
+
+	printk("StartEthInitTask has been terminated\r\n");
+	osThreadTerminate(NULL);
+
   /* Infinite loop */
   for(;;)
   {
@@ -287,16 +305,88 @@ void StartEthInitTask(void const * argument)
   /* USER CODE END StartEthInitTask */
 }
 
-/* StartEthTransTask function */
-void StartEthTransTask(void const * argument)
+/* StartEth0TransTask function */
+void StartEth0TransTask(void const * argument)
 {
-  /* USER CODE BEGIN StartEthTransTask */
+  /* USER CODE BEGIN StartEth0TransTask */
+  osStatus sem_retval;
+
+  /* Infinite loop */
+  for(;;)
+  {
+    // Await the data reception interruption...
+		sem_retval = osSemaphoreWait(semEth0IntHandle, osWaitForever);
+    if(sem_retval == osOK)
+    {
+      // If the Spi bus is busy, await the semphore...
+      sem_retval = osSemaphoreWait(semEthSpiIdleHandle, osWaitForever);
+      if(sem_retval == osOK)
+      {
+
+      }
+    }
+  }
+  /* USER CODE END StartEth0TransTask */
+}
+
+/* StartEth1TransTask function */
+void StartEth1TransTask(void const * argument)
+{
+  /* USER CODE BEGIN StartEth1TransTask */
+  osStatus sem_retval;
+
+  /* Infinite loop */
+  for(;;)
+  {
+    // Await the data reception interruption...
+		sem_retval = osSemaphoreWait(semEth1IntHandle, osWaitForever);
+    if(sem_retval == osOK)
+    {
+      // If the Spi bus is busy, await the semphore...
+      sem_retval = osSemaphoreWait(semEthSpiIdleHandle, osWaitForever);
+      if(sem_retval == osOK)
+      {
+
+      }
+    }
+  }
+  /* USER CODE END StartEth1TransTask */
+}
+
+/* StartEth2TransTask function */
+void StartEth2TransTask(void const * argument)
+{
+  /* USER CODE BEGIN StartEth2TransTask */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartEthTransTask */
+  /* USER CODE END StartEth2TransTask */
+}
+
+/* StartEth3TransTask function */
+void StartEth3TransTask(void const * argument)
+{
+  /* USER CODE BEGIN StartEth3TransTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartEth3TransTask */
+}
+
+/* StartEth4TransTask function */
+void StartEth4TransTask(void const * argument)
+{
+  /* USER CODE BEGIN StartEth4TransTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartEth4TransTask */
 }
 
 /* USER CODE BEGIN Application */

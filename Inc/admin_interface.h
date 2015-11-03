@@ -2,6 +2,7 @@
 #define __ADMIN_OPERATION_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #define MAX_LEN_CMD_NAME	15
 #define MAX_LEN_CMD_PARA	35
@@ -23,5 +24,6 @@ typedef enum
 void InitAdminInterface(void);
 void WaitForCommand(uint8_t **Command);
 aifStatus ParseCommand(uint8_t *command, CommandTypeDef *cmdstructure);
-
+void ExcuteCommand(CommandTypeDef *parsedcommand);
+void EchoCommand(const char*, ...);
 #endif

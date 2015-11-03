@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "usart.h"
 
-#ifdef _PRINTF_2_UART_
+#ifdef __PRINTF_2_UART_
 
 #if   defined ( __CC_ARM )		/* ARM Compiler (Keil) */
 

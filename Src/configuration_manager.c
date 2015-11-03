@@ -2,13 +2,23 @@
 #include <string.h>
 
 static FLASH_EraseInitTypeDef EraseInitStruct;
-ConfigurationTypeDef SystemConfig;
+ConfigurationTypeDef SystemConfig;		/* Global variable of config storage, it should be used in whole project */
 
+/**
+  * @brief  Read configurations from the flash to memory
+  * @param  
+  * @retval
+  */
 void ReadConfiguration(void)
 {
 	memcpy(&SystemConfig, (void const*)CONFIG_START_ADDRESS, sizeof(ConfigurationTypeDef));
 }
 
+/**
+  * @brief  Method to save configurations
+  * @param  
+  * @retval
+  */
 HAL_StatusTypeDef SaveConfiguration(void)
 {
 	uint32_t bytes_to_save;

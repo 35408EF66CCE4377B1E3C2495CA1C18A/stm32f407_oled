@@ -1,6 +1,5 @@
-#include "stm32f4xx_hal.h"
 #include "usart_common.h"
-#include "usart.h"
+
 
 
 uint8_t **uart_buf_using;
@@ -17,6 +16,57 @@ uint8_t uart2_buf[MAX_COUNT_UART2_BUF][MAX_DEPTH_UART2_BUF];
 uint8_t uart2_buf_row;
 uint8_t *uart2_buf_using;
 
+static char txbuf[512];
+
+
+static void UART_TransmitString(UART_HandleTypeDef*, const char*);
+
+/**
+  * @brief  Transmit the debug information through the specified uart port (in this case it's Uart1)
+  * @param  debuginfo: debug information
+  * @retval	null
+  */
+void USART_COMM_TransmitDebugInfo(const char* debuginfo, va_list ap)
+{
+//	va_list ptr_arg;
+//	va_start(ptr_arg, debuginfo);
+	vsprintf(txbuf, debuginfo, ap);
+//	va_end(ptr_arg);
+	UART_TransmitString(&huart1, txbuf);
+}
+
+/**
+  * @brief  Transmit the control command echoes through the specified uart port (in this case it's Uart1)
+  * @param  command: echoes of control command
+  * @retval null
+  */
+void USART_COMM_TransmitCommand(const char* command, va_list ap)
+{
+//	va_list ap;
+//	va_start(ap, command);
+	vsprintf(txbuf, command, ap);
+//	va_end(ap);
+	UART_TransmitString(&huart1, txbuf);
+}
+
+/**
+  * @brief  It's LOW-LEVEL usart transmition function
+  * 				it indicates where and how the data should be transmitted
+  * @param  huart:  Which usart port used to transmit the data
+  *					string:	the payload to transmit
+  * @retval null
+  */
+static void UART_TransmitString(UART_HandleTypeDef *huart, const char* string)
+{
+	HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txbuf, strlen(txbuf) + 1);
+	while(huart1.State == HAL_UART_STATE_BUSY_TX || huart1.State == HAL_UART_STATE_BUSY_TX_RX);
+}
+
+/**
+  * @brief  The callback function of rx completion ISR
+  * @param  huart:  the owner of ISR
+  * @retval	null
+  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   /*
@@ -77,11 +127,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 			}
 
-
-
-			//printf("  1, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
+			//printk("  1, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
 			uartretval = HAL_UART_Receive_IT(huart, *uart_buf_using, 1);
-			//printf("  2, RXNEIE = %d, retval = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE), uartretval);
+			//printk("  2, RXNEIE = %d, retval = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE), uartretval);
 		}
 		else
 		{
@@ -89,9 +137,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			// Simply drop the received command and reuse the buffer
 			*uart_buf_using = (uint8_t*)(uart_buf + *uart_buf_row);
 
-			//printf("  8, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
+			//printk("  8, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
 			HAL_UART_Receive_IT(huart, *uart_buf_using, 1);
-			//printf("  9, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
+			//printk("  9, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
 		}
 	}
 	else
@@ -109,6 +157,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
+
+/**
+  * @brief  The callback function of communication error ISR
+  * @param  huart:  the owner of ISR
+  * @retval
+  */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
   /* NOTE: This function Should not be modified, when the callback is needed,

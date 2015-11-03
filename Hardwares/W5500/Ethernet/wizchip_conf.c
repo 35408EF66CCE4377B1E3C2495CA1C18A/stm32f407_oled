@@ -55,6 +55,7 @@
 #include "wizchip_conf.h"
 #include "stm32f4xx_hal.h"
 #include "spi.h"
+#include "debug.h"
 
 //
 #define SPI_RW_TIMEOUT	10
@@ -179,7 +180,7 @@ void 	wizchip_spi_readburst(uint8_t* pBuf, uint16_t len)
 
 	if(err != osOK)
 	{
-		printf(" ** wizchip_spi_readburst() err(OS_ERR): 0x%04X\r\n", err);
+		printk(" ** wizchip_spi_readburst() err(OS_ERR): 0x%04X\r\n", err);
 	}
 	#else
 	HAL_SPI_Receive(&hspi1, pBuf, len, SPI_RW_TIMEOUT);
@@ -202,7 +203,7 @@ void 	wizchip_spi_writeburst(uint8_t* pBuf, uint16_t len)
 
 	if(err != osOK)
 	{
-		printf(" ** wizchip_spi_writeburst() err(OS_ERR): 0x%04X\r\n", err);
+		printk(" ** wizchip_spi_writeburst() err(OS_ERR): 0x%04X\r\n", err);
 	}
 	#else
 	HAL_SPI_Transmit(&hspi1, pBuf, len, SPI_RW_TIMEOUT);

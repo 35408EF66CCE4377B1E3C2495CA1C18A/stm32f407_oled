@@ -2,6 +2,10 @@
 #define __USART_COMMON_H
 
 #include "cmsis_os.h"
+#include "usart.h"
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
 
 #define MAX_COUNT_UART1_BUF	10
 #define MAX_DEPTH_UART1_BUF	50
@@ -24,6 +28,7 @@ extern uint8_t uart2_buf[MAX_COUNT_UART2_BUF][MAX_DEPTH_UART2_BUF];
 extern uint8_t uart2_buf_row;
 extern uint8_t *uart2_buf_using;
 
-
+void USART_COMM_TransmitDebugInfo(const char*, va_list);
+void USART_COMM_TransmitCommand(const char*, va_list);
 void StartReceive(UART_HandleTypeDef *huart);
 #endif
