@@ -244,7 +244,7 @@ void StartTaskUart1(void const * argument)
 	aifStatus retval_parsecmd;
 
 	// Initial the Admin Interface
-	InitAdminInterface();
+	InitAdminManagementInterface();
 
   /* Infinite loop */
   for(;;)

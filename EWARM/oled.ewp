@@ -174,7 +174,6 @@
           <name>CCDefines</name>
           <state>USE_HAL_DRIVER</state>
           <state>STM32F407xx</state>
-          <state>__PRINTF_2_UART_</state>
           <state>__KERNEL_DEBUG_</state>
         </option>
         <option>
