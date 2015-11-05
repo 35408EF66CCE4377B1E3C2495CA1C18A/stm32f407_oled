@@ -3645,7 +3645,7 @@ TCB_t *pxTCB;
 		 * results on different platforms.  An alternative, tiny, third party,
 		 * and limited functionality implementation of sprintf() is provided in
 		 * many of the FreeRTOS/Demo sub-directories in a file called
-		 * printk-stdarg.c (note printk-stdarg.c does not provide a full
+		 * printf-stdarg.c (note printf-stdarg.c does not provide a full
 		 * snprintf() implementation!).
 		 *
 		 * It is recommended that production systems call uxTaskGetSystemState()
@@ -3795,7 +3795,7 @@ TCB_t *pxTCB;
 						#else
 						{
 							/* sizeof( int ) == sizeof( long ) so a smaller
-							printk() library can be used. */
+							printf() library can be used. */
 							sprintf( pcWriteBuffer, "\t%u\t\t%u%%\r\n", ( unsigned int ) pxTaskStatusArray[ x ].ulRunTimeCounter, ( unsigned int ) ulStatsAsPercentage );
 						}
 						#endif
@@ -3811,7 +3811,7 @@ TCB_t *pxTCB;
 						#else
 						{
 							/* sizeof( int ) == sizeof( long ) so a smaller
-							printk() library can be used. */
+							printf() library can be used. */
 							sprintf( pcWriteBuffer, "\t%u\t\t<1%%\r\n", ( unsigned int ) pxTaskStatusArray[ x ].ulRunTimeCounter );
 						}
 						#endif

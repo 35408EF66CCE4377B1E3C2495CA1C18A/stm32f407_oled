@@ -69,7 +69,18 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	uint32_t cpuid0 = SCB->CPUID;
+	uint32_t cpuid1 = SCB->CPUID;
+	uint32_t cpuid2 = SCB->CPUID;
+	uint32_t cpuid3 = SCB->CPUID;
+	uint32_t cpuid4 = SCB->CPUID;
+	uint32_t cpuid5 = SCB->CPUID;
+	uint32_t cpuid6 = SCB->CPUID;
+	uint32_t cpuid7 = SCB->CPUID;
+	uint32_t cpuid8 = SCB->CPUID;
+	uint32_t cpuid9 = SCB->CPUID;
+	uint32_t cpuid10 = SCB->CPUID;
+	uint32_t cpuid11 = SCB->CPUID;
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/

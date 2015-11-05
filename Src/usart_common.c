@@ -47,6 +47,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usart_common.h"
+#include "debug.h"
+#include "stm32f4xx_hal.h"
 
 /** @addtogroup COMMON MODULE
   * @{
@@ -58,19 +60,19 @@
 /* Private variables -----------------------------------------------------------*/
 osMessageQId *qUart;													/*!< Point to the messageQId which is used to post Rx buffer pointer to the task awaiting*/
 
-uint8_t **uart_buf_using;											/*!< Point to the position of the buffer where is currently used to save the incoming byte */
-uint8_t *uart_buf_row;												/*!< point to the row of the buffer which is in use */
+//uint8_t **uart_buf_using;											/*!< Point to the position of the buffer where is currently used to save the incoming byte */
+//uint8_t *uart_buf_row;												/*!< point to the row of the buffer which is in use */
 uint8_t (*uart_buf)[MAX_DEPTH_UART1_BUF];			/*!< Point to the head of each buffer row */
 
 
 uint8_t uart1_buf[MAX_COUNT_UART1_BUF][MAX_DEPTH_UART1_BUF];
-uint8_t uart1_buf_row;
-uint8_t *uart1_buf_using;
+//uint8_t uart1_buf_row;
+//uint8_t *uart1_buf_using;
 
 
 uint8_t uart2_buf[MAX_COUNT_UART2_BUF][MAX_DEPTH_UART2_BUF];
-uint8_t uart2_buf_row;
-uint8_t *uart2_buf_using;
+//uint8_t uart2_buf_row;
+//uint8_t *uart2_buf_using;
 
 static char txbuf[512];
 
@@ -79,7 +81,7 @@ static char txbuf[512];
   * @{
   */
 static void UART_TransmitContent(UART_HandleTypeDef*);
-
+static void USART_Start_Receive_DMA(UART_HandleTypeDef*);
 /**
   *@}
   */
@@ -96,11 +98,15 @@ static void UART_TransmitContent(UART_HandleTypeDef*);
   */
 void USART_COMM_Init_AdminManagementPort(void)
 {
-  uart1_buf_row = 0;
-  uart1_buf_using = &uart1_buf[uart1_buf_row][0];
-  HAL_UART_Receive_IT(&huart1, uart1_buf_using, 1);
+	//uart1_buf_row = 0;
+	//uart1_buf_using = &uart1_buf[uart1_buf_row][0];
+	uart_buf = uart1_buf;
 
+  //HAL_UART_Receive_IT(&huart1, uart1_buf_using, 1);
+	USART_Start_Receive_DMA(&huart1);
 }
+
+
 
 /**
   * @brief  Transmit the debug information through the specified uart port (in this case it's Uart1)
@@ -130,6 +136,78 @@ void USART_COMM_TransmitCommand(const char* command, va_list ap)
 }
 
 /**
+  * @brief  The callback function of communication bus idle ISR.
+  * @param  huart: the owner of ISR.
+  * @retval null
+  */
+void My_HAL_UART_IdleCallback(UART_HandleTypeDef *huart)
+{
+	osStatus qretval;								/*!< The return value which indicates the osMessagePut() implementation result */
+	uint8_t* ptrdata;								/*!< Pointer to any byte in the uart buffer */
+	uint8_t (*ptr_bufhead)[1],			/*!< Pointer to the head of the uart buffer */
+					(*ptr_buftail)[1];			/*!< Pointer to the tail of the uart buffer */
+
+	if(huart->Instance == USART1)
+	{
+		uint32_t reclen = MAX_DEPTH_UART1_BUF - huart->hdmarx->Instance->NDTR;
+		ptrdata = *uart_buf + reclen - 1;		// point to the last char received
+		ptr_bufhead = (uint8_t(*)[1])uart1_buf[0];
+		ptr_buftail = (uint8_t(*)[1])uart1_buf[MAX_COUNT_UART1_BUF - 2];
+		qUart = &qUart1Handle;
+	}
+	else if(huart->Instance == USART2)
+	{
+		uint32_t reclen = MAX_DEPTH_UART2_BUF - huart->hdmarx->Instance->NDTR;
+		ptrdata = *uart_buf + reclen - 1;		// point to the last char received
+		ptr_bufhead = (uint8_t(*)[1])uart2_buf[0];
+		ptr_buftail = (uint8_t(*)[1])uart2_buf[MAX_COUNT_UART2_BUF - 2];
+		qUart = &qUart2Handle;
+	}
+
+
+	if(*ptrdata == '\n')
+	{
+		if(*(--ptrdata) == '\r')	// A command has been received
+		{
+			if(xQueueIsQueueFullFromISR(*qUart) == pdTRUE)	// if the uart1 queue was full, drop this command
+			{
+				//*uart_buf_using = &uart1_buf[uart1_buf_row][0];
+
+			}
+			else
+			{
+				/*
+				* The current buffer has been used and post to the working thread
+				* switch to the next uart1 queue buffer to recevie the furture data
+				*/
+				qretval = osMessagePut(*qUart, (uint32_t)(uart_buf), 100);	// Put the pointer of the data container to the queue
+				if(qretval != osOK)
+				{
+						printk(KERN_ERR "It's failed to put the command into the message queue!\r\n");
+				}
+
+				/* Move to the next row of the buffer */
+				uart_buf++;
+				if(uart_buf > (uint8_t(*)[50])ptr_buftail)
+				{
+						uart_buf = (uint8_t(*)[50])ptr_bufhead;
+				}
+			}
+		}
+
+		/*!< Reset DMA_EN bit can result in the TCIF interrupt.
+		The interrupt raises the HAL_UART_RxCpltCallback() event, the DMA_Rx will be restarted in it */
+		HAL_DMA_Abort(huart->hdmarx);
+	}
+	else
+	{
+			/* Enable IDLE interrupt again */
+			__HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);
+	}
+}
+
+
+/**
   *@}
   */
 
@@ -152,139 +230,45 @@ static void UART_TransmitContent(UART_HandleTypeDef *huart)
 }
 
 /**
+  * @brief  It's LOW-LEVEL usart receive initialization function.
+  * 				The DMA will be used to receive data.
+  * @param  huart:Which usart port used to receive data
+  * @retval null
+  */
+static void USART_Start_Receive_DMA(UART_HandleTypeDef *huart)
+{
+	HAL_UART_Receive_DMA(huart, (uint8_t*)uart_buf, MAX_DEPTH_UART1_BUF);
+
+	/*!< Enable the Idle interrupt.
+	Attention: REMEMBER to add IDLE Interrupt handler to stm324xx_it.c.
+
+	[...] The Idle ISR code is following
+
+				uint32_t tmp1, tmp2;
+				tmp1 = __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE);
+				tmp2 = __HAL_UART_GET_IT_SOURCE(&huart1, UART_IT_IDLE);
+
+				if((tmp1 != RESET) && (tmp2 != RESET))
+				{
+					__HAL_UART_CLEAR_IDLEFLAG(&huart1);
+					My_HAL_UART_IdleCallback(&huart1);
+				}
+	[...]
+	*/
+	__HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);
+}
+
+/**
   * @brief  The callback function of rx completion ISR
   * @param  huart: the owner of ISR
   * @retval	null
   */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  /*
-	NOTE: This function Should not be modified, when the callback is needed,
-           the HAL_UART_TxCpltCallback could be implemented in the user file
-   */
-	uint8_t *pUartData;
-	osStatus qretval;
-	HAL_StatusTypeDef uartretval;
-
-	if(huart->Instance == USART1)
-	{
-		uart_buf = uart1_buf;
-		uart_buf_using = &uart1_buf_using;
-		uart_buf_row = &uart1_buf_row;
-
-		qUart = &qUart1Handle;
-	}
-	else if(huart->Instance == USART2)
-	{
-		uart_buf = uart1_buf;
-		uart_buf_using = &uart2_buf_using;
-		uart_buf_row = &uart2_buf_row;
-
-		qUart = &qUart2Handle;
-	}
-
-	pUartData = *uart_buf_using;
-
-	if(*pUartData == '\n')
-	{
-		if(*(--pUartData) == '\r')
-		{
-			// Replace the \r to 0x0, which indicates the terminal of the command string
-			*pUartData = 0x0;
-
-			if(xQueueIsQueueFullFromISR(*qUart) == pdTRUE)	// if the uart1 queue was full, drop this command
-			{
-				//*uart_buf_using = &uart1_buf[uart1_buf_row][0];
-				*uart_buf_using = (uint8_t*)(uart_buf + *uart_buf_row);
-			}
-			else
-			{
-				/*
-				* The current buffer has been used and post to the working thread
-				* switch to the next uart1 queue buffer to recevie the furture data
-				*/
-				// Put the pointer of the data container to the queue
-				qretval = osMessagePut(*qUart, (uint32_t)(uart_buf + *uart_buf_row), 100);
-
-				//uart1_buf_row ++;
-				(*uart_buf_row)++;
-
-				if(*uart_buf_row >= MAX_COUNT_UART1_BUF)
-					*uart_buf_row = 0;
-				//uart1_buf_using = &uart1_buf[uart1_buf_row][0];
-				*uart_buf_using = (uint8_t*)(uart_buf + *uart_buf_row);
-
-			}
-
-			//printk("  1, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
-			uartretval = HAL_UART_Receive_IT(huart, *uart_buf_using, 1);
-			//printk("  2, RXNEIE = %d, retval = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE), uartretval);
-		}
-		else
-		{
-			// Running here means an error command was got OR a too long command was transmitted into the Buffer
-			// Simply drop the received command and reuse the buffer
-			*uart_buf_using = (uint8_t*)(uart_buf + *uart_buf_row);
-
-			//printk("  8, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
-			HAL_UART_Receive_IT(huart, *uart_buf_using, 1);
-			//printk("  9, RXNEIE = %d\r\n", __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE));
-		}
-	}
-	else
-	{
-		// Move the pointer to the next byte of the uart1 recipient
-		//uart1_buf_using++;
-		(*uart_buf_using)++;
-
-		if((*uart_buf_using) > (uint8_t*)((uint32_t)(uart_buf + *uart_buf_row) + MAX_DEPTH_UART1_BUF - 1))
-		{
-			*uart_buf_using = (uint8_t*)((uint32_t)(uart_buf + *uart_buf_row) + MAX_DEPTH_UART1_BUF - 1);
-		}
-
-		HAL_UART_Receive_IT(huart, *uart_buf_using, 1);
-	}
+		USART_Start_Receive_DMA(huart);
 }
 
 
-/**
-  * @brief  The callback function of communication error ISR
-  * @param  huart:  the owner of ISR
-  * @retval
-  */
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
-{
-  /* NOTE: This function Should not be modified, when the callback is needed,
-           the HAL_UART_ErrorCallback could be implemented in the user file
-   */
-	if(huart->ErrorCode & HAL_UART_ERROR_ORE)
-	{
-		__HAL_UART_FLUSH_DRREGISTER(huart);
-	}
-
-	if(huart->ErrorCode & HAL_UART_ERROR_PE)
-	{
-
-	}
-
-	if(huart->ErrorCode & HAL_UART_ERROR_NE)
-	{
-
-	}
-
-	if(huart->ErrorCode & HAL_UART_ERROR_FE)
-	{
-
-	}
-
-	if(huart->ErrorCode & HAL_UART_ERROR_DMA)
-	{
-
-	}
-
-	uart1_buf_using = &uart1_buf[uart1_buf_row][0];
-	HAL_UART_Receive_IT(huart, uart1_buf_using, 1);
-}
 
 /**
   *@}

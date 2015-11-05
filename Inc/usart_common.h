@@ -73,4 +73,5 @@ extern osMessageQId qUart2Handle;	/*!< the uart2 message queue handler which is 
 void USART_COMM_Init_AdminManagementPort(void);
 void USART_COMM_TransmitDebugInfo(const char* content, va_list ap);
 void USART_COMM_TransmitCommand(const char* command, va_list ap);
+void My_HAL_UART_IdleCallback(UART_HandleTypeDef *huart);
 #endif

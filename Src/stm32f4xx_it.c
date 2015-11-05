@@ -37,17 +37,16 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "usart_common.h"
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
 extern void xPortSysTickHandler(void);
-extern DMA_HandleTypeDef hdma_memtomem_dma2_stream4;
-extern DMA_HandleTypeDef hdma_memtomem_dma2_stream1;
 extern DMA_HandleTypeDef hdma_spi1_rx;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 extern SPI_HandleTypeDef hspi1;
 extern DMA_HandleTypeDef hdma_usart1_tx;
+extern DMA_HandleTypeDef hdma_usart1_rx;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 
@@ -167,6 +166,16 @@ void SPI1_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
+	uint32_t tmp1, tmp2;
+  tmp1 = __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE);
+  tmp2 = __HAL_UART_GET_IT_SOURCE(&huart1, UART_IT_IDLE);
+
+  if((tmp1 != RESET) && (tmp2 != RESET))
+  {
+		__HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE);
+    __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+    My_HAL_UART_IdleCallback(&huart1);
+  }
 
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
@@ -204,17 +213,17 @@ void DMA2_Stream0_IRQHandler(void)
 }
 
 /**
-* @brief This function handles DMA2 stream1 global interrupt.
+* @brief This function handles DMA2 stream2 global interrupt.
 */
-void DMA2_Stream1_IRQHandler(void)
+void DMA2_Stream2_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
+  /* USER CODE BEGIN DMA2_Stream2_IRQn 0 */
 
-  /* USER CODE END DMA2_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_memtomem_dma2_stream1);
-  /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
+  /* USER CODE END DMA2_Stream2_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
+  /* USER CODE BEGIN DMA2_Stream2_IRQn 1 */
 
-  /* USER CODE END DMA2_Stream1_IRQn 1 */
+  /* USER CODE END DMA2_Stream2_IRQn 1 */
 }
 
 /**

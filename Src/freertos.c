@@ -159,7 +159,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of uart1Task */
-  osThreadDef(uart1Task, StartTaskUart1, osPriorityNormal, 0, 256);
+  osThreadDef(uart1Task, StartTaskUart1, osPriorityNormal, 0, 512);
   uart1TaskHandle = osThreadCreate(osThread(uart1Task), NULL);
 
   /* definition and creation of ethInitTask */
@@ -167,23 +167,23 @@ void MX_FREERTOS_Init(void) {
   ethInitTaskHandle = osThreadCreate(osThread(ethInitTask), NULL);
 
   /* definition and creation of eth0TransTask */
-  osThreadDef(eth0TransTask, StartEth0TransTask, osPriorityNormal, 0, 64);
+  osThreadDef(eth0TransTask, StartEth0TransTask, osPriorityNormal, 0, 256);
   eth0TransTaskHandle = osThreadCreate(osThread(eth0TransTask), NULL);
 
   /* definition and creation of eth1TransTask */
-  osThreadDef(eth1TransTask, StartEth1TransTask, osPriorityNormal, 0, 64);
+  osThreadDef(eth1TransTask, StartEth1TransTask, osPriorityNormal, 0, 256);
   eth1TransTaskHandle = osThreadCreate(osThread(eth1TransTask), NULL);
 
   /* definition and creation of eth2TransTask */
-  osThreadDef(eth2TransTask, StartEth2TransTask, osPriorityNormal, 0, 64);
+  osThreadDef(eth2TransTask, StartEth2TransTask, osPriorityNormal, 0, 256);
   eth2TransTaskHandle = osThreadCreate(osThread(eth2TransTask), NULL);
 
   /* definition and creation of eth3TransTask */
-  osThreadDef(eth3TransTask, StartEth3TransTask, osPriorityNormal, 0, 64);
+  osThreadDef(eth3TransTask, StartEth3TransTask, osPriorityNormal, 0, 256);
   eth3TransTaskHandle = osThreadCreate(osThread(eth3TransTask), NULL);
 
   /* definition and creation of eth4TransTask */
-  osThreadDef(eth4TransTask, StartEth4TransTask, osPriorityNormal, 0, 64);
+  osThreadDef(eth4TransTask, StartEth4TransTask, osPriorityNormal, 0, 256);
   eth4TransTaskHandle = osThreadCreate(osThread(eth4TransTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -262,7 +262,7 @@ void StartTaskUart1(void const * argument)
 		{
 			ExcuteCommand(&parsedcommand);
 			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
-			osDelay(10);
+			osDelay(5);
 			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
 		}
 		else
@@ -271,11 +271,11 @@ void StartTaskUart1(void const * argument)
 			//printk("Command parsing error: %d\r\n", retval_parsecmd);
 
 			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
-			osDelay(10);
+			osDelay(5);
 			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
-			osDelay(50);
-			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
 			osDelay(10);
+			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
+			osDelay(5);
 			HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
 		}
   }
@@ -300,7 +300,7 @@ void StartEthInitTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(100);
   }
   /* USER CODE END StartEthInitTask */
 }
